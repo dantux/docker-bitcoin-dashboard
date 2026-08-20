@@ -269,6 +269,14 @@ button:hover {
   font-size: 28px;
 }
 
+.metric-detail {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .two-column {
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -6,7 +6,9 @@ responsive, dependency-free web interface.
 
 ## Features
 
-- Node sync, chain, connection, mempool, fee, uptime, and disk statistics
+- Node sync, chain, connection, mempool, fee, uptime, and storage statistics
+- Full-history or pruned mode, including current usage and configured prune target
+- Configurable instance name for identifying dashboards across multiple servers
 - Latest block cards and a detailed peer table
 - Docker-native Bitcoin RPC connectivity
 - Optional Electrs, Tor, mempool explorer, and host-metrics integrations
@@ -38,6 +40,9 @@ nano secrets/bitcoin_rpc_password
 
 Set `BITCOIN_RPC_USER` in `.env` and place only its plain-text password in the
 secret file. Both files are excluded from Git.
+
+Set `DASHBOARD_INSTANCE_NAME` to a short, recognizable server or node name. It
+is displayed in the dashboard header and browser tab.
 
 The default configuration expects:
 
@@ -153,10 +158,12 @@ always obtained over RPC and does not require a filesystem mount.
 | `DASHBOARD_IMAGE_TAG` | `local` | Image tag used by Compose |
 | `DASHBOARD_BIND_ADDRESS` | `0.0.0.0` | Published host address |
 | `DASHBOARD_PORT` | `8335` | Published dashboard port |
-| `NODE_NAME` | `bitcoin-knots` | Name displayed in the UI |
+| `DASHBOARD_INSTANCE_NAME` | `bitcoin-knots` | Instance/server name shown in the header and browser tab |
 | `REFRESH_INTERVAL_SECONDS` | `30` | Backend cache refresh interval |
 
 See `.env.example` for all optional settings.
+
+`NODE_NAME` remains supported as a deprecated fallback for existing deployments.
 
 ## Endpoints
 

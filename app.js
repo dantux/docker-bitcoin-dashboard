@@ -215,7 +215,9 @@ function render(data) {
   const progressClamped = Math.max(0, Math.min(100, progress));
 
   applyFeatures(data);
-  $("node-name").textContent = (data.node && data.node.name) || "bitcoin-knots";
+  const instanceName = (data.node && data.node.name) || "bitcoin-knots";
+  $("node-name").textContent = instanceName;
+  document.title = `${instanceName} · Bitcoin Knots Status`;
 
   $("sync-label").textContent = sync.initial_block_download ? "Initial block download" : "Synced";
   $("sync-percent").textContent = `${progress.toFixed ? progress.toFixed(2) : progress}%`;
@@ -236,6 +238,23 @@ function render(data) {
   $("fee-1h").textContent = fmtFee(fees["1h"]);
 
   $("disk-size").textContent = fmtBytes(sync.size_on_disk_bytes);
+  if (sync.pruned === true) {
+    $("storage-label").textContent = "Pruned data";
+    $("pruning-status").textContent = sync.prune_target_size_bytes != null
+      ? `Pruned · ${fmtBytes(sync.prune_target_size_bytes)} target`
+      : "Pruned";
+    $("pruning-status").title = sync.prune_height != null
+      ? `Blocks below height ${fmtNumber(sync.prune_height)} may be unavailable`
+      : "Older block data may be unavailable";
+  } else if (sync.pruned === false) {
+    $("storage-label").textContent = "Blockchain data";
+    $("pruning-status").textContent = "Full history";
+    $("pruning-status").removeAttribute("title");
+  } else {
+    $("storage-label").textContent = "Blockchain data";
+    $("pruning-status").textContent = "Mode unavailable";
+    $("pruning-status").removeAttribute("title");
+  }
 
   $("knots-service").textContent = serviceLabel(services.knots);
   if (services.tor) $("tor-service").textContent = serviceLabel(services.tor);

@@ -8,6 +8,40 @@ import app
 
 
 class ConfigurationTests(unittest.TestCase):
+    def test_dashboard_instance_name_defaults_to_bitcoin_knots(self):
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(app.dashboard_instance_name(), "bitcoin-knots")
+
+    def test_dashboard_instance_name_prefers_explicit_instance_name(self):
+        environment = {
+            "DASHBOARD_INSTANCE_NAME": "knots-pi5",
+            "NODE_NAME": "legacy-name",
+        }
+        with patch.dict(os.environ, environment, clear=True):
+            self.assertEqual(app.dashboard_instance_name(), "knots-pi5")
+
+    def test_dashboard_instance_name_supports_legacy_node_name(self):
+        with patch.dict(os.environ, {"NODE_NAME": "legacy-name"}, clear=True):
+            self.assertEqual(app.dashboard_instance_name(), "legacy-name")
+
+    def test_pruning_fields_are_exposed(self):
+        sync = app.blockchain_sync_status(
+            {
+                "verificationprogress": 0.99999,
+                "pruned": True,
+                "pruneheight": 900000,
+                "automatic_pruning": True,
+                "prune_target_size": 5_242_880_000,
+                "size_on_disk": 5_190_617_191,
+            }
+        )
+        self.assertTrue(sync["pruned"])
+        self.assertEqual(sync["prune_height"], 900000)
+        self.assertTrue(sync["automatic_pruning"])
+        self.assertEqual(sync["prune_target_size_bytes"], 5_242_880_000)
+        self.assertEqual(sync["size_on_disk_bytes"], 5_190_617_191)
+        self.assertEqual(sync["progress_percent"], 100.0)
+
     def test_optional_features_are_disabled_by_default(self):
         with patch.dict(os.environ, {}, clear=True):
             features = app.feature_config()

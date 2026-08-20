@@ -54,6 +54,35 @@ def feature_config():
     }
 
 
+def dashboard_instance_name():
+    for variable in ("DASHBOARD_INSTANCE_NAME", "NODE_NAME"):
+        value = os.environ.get(variable, "").strip()
+        if value:
+            return value
+    return "bitcoin-knots"
+
+
+def blockchain_sync_status(blockchain):
+    verification_progress = blockchain.get("verificationprogress")
+    progress_percent = (
+        round(verification_progress * 100, 2)
+        if verification_progress is not None
+        else None
+    )
+    return {
+        "blocks": blockchain.get("blocks"),
+        "headers": blockchain.get("headers"),
+        "progress_percent": progress_percent,
+        "initial_block_download": blockchain.get("initialblockdownload"),
+        "best_block_time": blockchain.get("time"),
+        "size_on_disk_bytes": blockchain.get("size_on_disk"),
+        "pruned": blockchain.get("pruned"),
+        "prune_height": blockchain.get("pruneheight"),
+        "automatic_pruning": blockchain.get("automatic_pruning"),
+        "prune_target_size_bytes": blockchain.get("prune_target_size"),
+    }
+
+
 def bitcoin_rpc(method, params=None):
     url = os.environ.get("BITCOIN_RPC_URL", "http://bitcoin-knots:8332")
     user = os.environ.get("BITCOIN_RPC_USER", "")
@@ -253,9 +282,6 @@ def collect_status():
             "pingtime_ms": round(peer.get("pingtime", 0) * 1000, 0) if peer.get("pingtime") is not None else None,
         })
 
-    verification_progress = blockchain.get("verificationprogress")
-    progress_percent = round(verification_progress * 100, 2) if verification_progress is not None else None
-
     warnings = []
     for source in (blockchain, network):
         item = source.get("warnings")
@@ -316,18 +342,10 @@ def collect_status():
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "duration_ms": round((time.time() - started) * 1000),
-        "node": {"name": os.environ.get("NODE_NAME", "bitcoin-knots")},
+        "node": {"name": dashboard_instance_name()},
         "features": features,
         "chain": blockchain.get("chain"),
-        "sync": {
-            "blocks": blockchain.get("blocks"),
-            "headers": blockchain.get("headers"),
-            "progress_percent": progress_percent,
-            "initial_block_download": blockchain.get("initialblockdownload"),
-            "best_block_time": blockchain.get("time"),
-            "size_on_disk_bytes": blockchain.get("size_on_disk"),
-            "pruned": blockchain.get("pruned"),
-        },
+        "sync": blockchain_sync_status(blockchain),
         "connections": {
             "total": network.get("connections"),
             "in": network.get("connections_in", inbound),
@@ -364,7 +382,7 @@ def empty_status():
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "duration_ms": 0,
-        "node": {"name": os.environ.get("NODE_NAME", "bitcoin-knots")},
+        "node": {"name": dashboard_instance_name()},
         "features": feature_config(),
         "chain": None,
         "sync": {},
