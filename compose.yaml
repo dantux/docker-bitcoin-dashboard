@@ -1,0 +1,49 @@
+services:
+  dashboard:
+    build:
+      context: .
+    image: docker-bitcoin-dashboard:local
+    container_name: docker-bitcoin-dashboard
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      BITCOIN_RPC_URL: ${BITCOIN_RPC_URL:-http://bitcoin-knots:8332}
+      BITCOIN_RPC_USER: ${BITCOIN_RPC_USER:?Set BITCOIN_RPC_USER in .env}
+      BITCOIN_RPC_PASSWORD_FILE: /run/secrets/bitcoin_rpc_password
+      BITCOIN_RPC_TIMEOUT_SECONDS: ${BITCOIN_RPC_TIMEOUT_SECONDS:-10}
+      DASHBOARD_HOST: 0.0.0.0
+      DASHBOARD_PORT: 8335
+      NODE_NAME: ${NODE_NAME:-bitcoin-knots}
+      REFRESH_INTERVAL_SECONDS: ${REFRESH_INTERVAL_SECONDS:-30}
+      ELECTRS_ENABLED: ${ELECTRS_ENABLED:-false}
+      ELECTRS_METRICS_URL: ${ELECTRS_METRICS_URL:-http://electrs:4224}
+      TOR_ENABLED: ${TOR_ENABLED:-false}
+      MEMPOOL_EXPLORER_ENABLED: ${MEMPOOL_EXPLORER_ENABLED:-false}
+      MEMPOOL_EXPLORER_URL: ${MEMPOOL_EXPLORER_URL:-}
+      HOST_METRICS_ENABLED: ${HOST_METRICS_ENABLED:-false}
+      CPU_TEMP_PATH: ${CPU_TEMP_PATH:-/sys/class/thermal/thermal_zone0/temp}
+      LOADAVG_PATH: ${LOADAVG_PATH:-/proc/loadavg}
+      DISK_MONITOR_PATH: ${DISK_MONITOR_PATH:-}
+      DISK_WARNING_FREE_GB: ${DISK_WARNING_FREE_GB:-100}
+    secrets:
+      - bitcoin_rpc_password
+    networks:
+      - bitcoin
+    ports:
+      - "${DASHBOARD_BIND_ADDRESS:-0.0.0.0}:${DASHBOARD_PORT:-8335}:8335"
+    restart: unless-stopped
+
+secrets:
+  bitcoin_rpc_password:
+    file: ${BITCOIN_RPC_PASSWORD_SECRET_FILE:-./secrets/bitcoin_rpc_password}
+
+networks:
+  bitcoin:
+    external: true
+    name: ${BITCOIN_DOCKER_NETWORK:-bitcoinknots_default}

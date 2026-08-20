@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bitcoin Knots Status</title>
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div class="node-title">
+          <img class="node-icon" src="./icon.svg" alt="" aria-hidden="true" />
+          <div>
+            <p class="eyebrow">Bitcoin Knots · <span id="node-name">bitcoin-knots</span></p>
+            <h1>Node Status</h1>
+          </div>
+        </div>
+        <div class="refresh">
+          <span id="last-updated">Waiting for data</span>
+          <button id="theme-toggle" type="button" title="Toggle theme" aria-label="Toggle dark mode">🌙</button>
+          <button id="refresh-now" type="button" title="Refresh now">Refresh</button>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div>
+          <p id="sync-label" class="status-label">Loading</p>
+          <div class="progress-line">
+            <strong id="sync-percent">--%</strong>
+            <span id="height-label">-- / --</span>
+          </div>
+          <div class="progress-track" aria-label="Sync progress">
+            <div id="sync-bar" class="progress-bar"></div>
+          </div>
+        </div>
+        <div id="warning-box" class="warning-box hidden"></div>
+      </section>
+
+      <section class="metric-grid" aria-label="Node metrics">
+        <article class="metric">
+          <span>Inbound</span>
+          <strong id="connections-in">--</strong>
+        </article>
+        <article class="metric">
+          <span>Outbound</span>
+          <strong id="connections-out">--</strong>
+        </article>
+        <article class="metric">
+          <span>IPv4</span>
+          <strong id="ipv4-status">--</strong>
+        </article>
+        <article class="metric hidden" data-feature="tor">
+          <span>Onion</span>
+          <strong id="onion-status">--</strong>
+        </article>
+        <article class="metric">
+          <a id="mempool-link"><span>Mempool</span></a>
+          <strong id="mempool-size">--</strong>
+        </article>
+        <article class="metric">
+          <span>Next block</span>
+          <strong id="fee-next">--</strong>
+        </article>
+        <article class="metric">
+          <span>30 min</span>
+          <strong id="fee-30m">--</strong>
+        </article>
+        <article class="metric">
+          <span>1 hour</span>
+          <strong id="fee-1h">--</strong>
+        </article>
+        <article class="metric">
+          <span>Disk</span>
+          <strong id="disk-size">--</strong>
+        </article>
+      </section>
+
+      <section class="two-column">
+        <article class="panel" id="services-panel">
+          <div class="panel-head">
+            <h2>Services</h2>
+          </div>
+          <div class="services-grid">
+            <div class="services-col">
+              <div class="col-head">Bitcoin Services</div>
+              <dl class="details">
+                <div><dt>Knots</dt><dd id="knots-service">--</dd></div>
+                <div class="hidden" data-feature="tor"><dt>Tor</dt><dd id="tor-service">--</dd></div>
+                <div class="hidden" data-feature="electrs"><dt>Electrs</dt><dd id="electrs-service">--</dd></div>
+              </dl>
+            </div>
+            <div class="services-col">
+              <div class="col-head">System</div>
+              <dl class="details">
+                <div><dt>Node uptime</dt><dd id="node-uptime">--</dd></div>
+                <div><dt>Best block time</dt><dd id="best-block-time">--</dd></div>
+                <div class="hidden" data-feature="host_metrics"><dt>CPU temp</dt><dd id="cpu-temp">--</dd></div>
+                <div class="hidden" data-feature="host_metrics"><dt>Load (1m / 5m / 15m)</dt><dd id="load-avg">--</dd></div>
+              </dl>
+            </div>
+          </div>
+
+          <div class="tor-address-row hidden" data-feature="tor">
+            <span class="tor-label">Tor Address</span>
+            <code id="tor-onion-address">--</code>
+          </div>
+        </article>
+
+      </section>
+
+      <section class="panel latest-blocks-panel">
+        <div class="panel-head">
+          <h2>Latest Blocks</h2>
+          <span id="recent-blocks-summary">--</span>
+        </div>
+        <div id="latest-blocks-grid" class="latest-blocks-grid"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Peers</h2>
+          <span id="peer-summary">--</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Direction</th>
+                <th>Network</th>
+                <th>Address</th>
+                <th>Type</th>
+                <th>Ping</th>
+                <th>Synced</th>
+              </tr>
+            </thead>
+            <tbody id="peers-body">
+              <tr><td colspan="6">Loading peers...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <script src="./app.js"></script>
+  </body>
+</html>
