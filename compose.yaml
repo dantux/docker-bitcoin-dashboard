@@ -2,7 +2,7 @@ services:
   dashboard:
     build:
       context: .
-    image: docker-bitcoin-dashboard:local
+    image: ${DASHBOARD_IMAGE:-docker-bitcoin-dashboard}:${DASHBOARD_IMAGE_TAG:-local}
     container_name: docker-bitcoin-dashboard
     init: true
     read_only: true

@@ -68,6 +68,25 @@ docker compose logs -f dashboard
 
 Open `http://your-server:8335`.
 
+## Building a release image
+
+The current application version is stored in `VERSION`. Build metadata is
+recorded as standard OCI image labels:
+
+```bash
+docker build \
+  --build-arg APP_VERSION="$(cat VERSION)" \
+  --build-arg VCS_REF="$(git rev-parse HEAD)" \
+  --build-arg BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --tag "docker-bitcoin-dashboard:$(cat VERSION)" \
+  --tag docker-bitcoin-dashboard:latest \
+  .
+```
+
+The Python base image is pinned by digest for repeatable builds. Update that
+digest deliberately when incorporating upstream Python or Debian security
+updates.
+
 ## Optional integrations
 
 All optional integrations default to disabled. Disabled services are not
@@ -130,6 +149,8 @@ always obtained over RPC and does not require a filesystem mount.
 | `BITCOIN_RPC_USER` | required | Dedicated RPC username |
 | `BITCOIN_RPC_PASSWORD_FILE` | `/run/secrets/bitcoin_rpc_password` | Secret inside the container |
 | `BITCOIN_DOCKER_NETWORK` | `bitcoinknots_default` | Existing Docker network name |
+| `DASHBOARD_IMAGE` | `docker-bitcoin-dashboard` | Image repository used by Compose |
+| `DASHBOARD_IMAGE_TAG` | `local` | Image tag used by Compose |
 | `DASHBOARD_BIND_ADDRESS` | `0.0.0.0` | Published host address |
 | `DASHBOARD_PORT` | `8335` | Published dashboard port |
 | `NODE_NAME` | `bitcoin-knots` | Name displayed in the UI |

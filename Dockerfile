@@ -1,4 +1,18 @@
-FROM python:3.12-slim
+FROM python:3.12-slim@sha256:2c941e860699f878900b0edc2403613c234d4b32eda3cc9fa7036991a2a63c4a
+
+ARG APP_VERSION=dev
+ARG VCS_REF=unknown
+ARG BUILD_DATE=unknown
+
+LABEL org.opencontainers.image.title="Docker Bitcoin Dashboard" \
+      org.opencontainers.image.description="A lightweight Docker-native dashboard for Bitcoin Knots" \
+      org.opencontainers.image.url="https://github.com/dantux/docker-bitcoin-dashboard" \
+      org.opencontainers.image.source="https://github.com/dantux/docker-bitcoin-dashboard" \
+      org.opencontainers.image.documentation="https://github.com/dantux/docker-bitcoin-dashboard#readme" \
+      org.opencontainers.image.version="${APP_VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.licenses="MIT"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
