@@ -95,5 +95,12 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(password, "correct horse battery staple")
 
 
+class PageStructureTests(unittest.TestCase):
+    def test_latest_blocks_appears_before_services(self):
+        html = Path(app.APP_DIR / "index.html").read_text(encoding="utf-8")
+
+        self.assertLess(html.index("<h2>Latest Blocks</h2>"), html.index("<h2>Services</h2>"))
+
+
 if __name__ == "__main__":
     unittest.main()
