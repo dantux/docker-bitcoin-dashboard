@@ -101,6 +101,17 @@ class PageStructureTests(unittest.TestCase):
 
         self.assertLess(html.index("<h2>Latest Blocks</h2>"), html.index("<h2>Services</h2>"))
 
+    def test_desktop_metric_grid_uses_seven_columns(self):
+        css = Path(app.APP_DIR / "styles.css").read_text(encoding="utf-8")
+        desktop_css = css.split("@media", 1)[0]
+
+        self.assertIn("grid-template-columns: repeat(7, minmax(0, 1fr));", desktop_css)
+
+    def test_one_hour_fee_card_is_not_rendered(self):
+        html = Path(app.APP_DIR / "index.html").read_text(encoding="utf-8")
+
+        self.assertNotIn('id="fee-1h"', html)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -235,7 +235,6 @@ function render(data) {
   const fmtFee = (est) => (est && est.feerate != null) ? Math.round(est.feerate * 100000) + " sat/vB" : "--";
   $("fee-next").textContent = fmtFee(fees.next_block);
   $("fee-30m").textContent = fmtFee(fees["30min"]);
-  $("fee-1h").textContent = fmtFee(fees["1h"]);
 
   $("disk-size").textContent = fmtBytes(sync.size_on_disk_bytes);
   if (sync.pruned === true) {
