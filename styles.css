@@ -250,9 +250,21 @@ button:hover {
   margin: 18px 0;
 }
 
+.metric-grid:has(> .metric[data-feature="tor"]:not(.hidden)) {
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+}
+
 .metric {
   min-height: 94px;
   padding: 16px;
+}
+
+.metric-grid:has(> .metric[data-feature="tor"]:not(.hidden)) .metric {
+  padding: 14px 10px;
+}
+
+.metric-grid:has(> .metric[data-feature="tor"]:not(.hidden)) .metric strong {
+  font-size: 24px;
 }
 
 .metric span {

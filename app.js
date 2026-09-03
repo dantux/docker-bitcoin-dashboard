@@ -218,6 +218,13 @@ function render(data) {
   const instanceName = (data.node && data.node.name) || "bitcoin-knots";
   $("node-name").textContent = instanceName;
   document.title = `${instanceName} · Bitcoin Knots Status`;
+  const versionLabel = (data.network && data.network.version_label) || "";
+  $("knots-version").textContent = versionLabel || "--";
+  if (data.network && data.network.subversion) {
+    $("knots-version").title = data.network.subversion;
+  } else {
+    $("knots-version").removeAttribute("title");
+  }
 
   $("sync-label").textContent = sync.initial_block_download ? "Initial block download" : "Synced";
   $("sync-percent").textContent = `${progress.toFixed ? progress.toFixed(2) : progress}%`;

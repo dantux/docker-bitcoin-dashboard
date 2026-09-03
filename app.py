@@ -3,6 +3,7 @@ import argparse
 import base64
 import json
 import os
+import re
 import threading
 import time
 import urllib.request
@@ -60,6 +61,21 @@ def dashboard_instance_name():
         if value:
             return value
     return "bitcoin-knots"
+
+
+def knots_version_label(subversion):
+    if not subversion:
+        return ""
+    text = str(subversion)
+    satoshi = re.search(r"Satoshi:([^/]+)", text)
+    knots = re.search(r"Knots:([^/]+)", text)
+    if satoshi and knots:
+        return f"{satoshi.group(1)} (Knots {knots.group(1)})"
+    if knots:
+        return f"Knots {knots.group(1)}"
+    if satoshi:
+        return satoshi.group(1)
+    return text.strip("/")
 
 
 def blockchain_sync_status(blockchain):
@@ -188,31 +204,34 @@ def collect_status():
         blockchain = {}
         errors.append({"source": "getblockchaininfo", "message": str(e)})
 
+    collect_optional_rpc = blockchain.get("initialblockdownload") is False
+
     # Recent blocks (last 8) for mini-list
     recent_blocks = []
-    try:
-        height = blockchain.get("blocks")
-        if height is not None:
-            for i in range(8):
-                h = height - i
-                if h < 0:
-                    break
-                try:
-                    block_hash = bitcoin_rpc("getblockhash", [h])
-                    header = bitcoin_rpc("getblockheader", [block_hash])
-                    stats = bitcoin_rpc("getblockstats", [h])
-                    recent_blocks.append({
-                        "height": header.get("height"),
-                        "time": header.get("time"),
-                        "tx_count": stats.get("txs"),
-                        "size": stats.get("total_size"),
-                        "hash": header.get("hash"),
-                    })
-                except Exception as e:
-                    errors.append({"source": "recent_block_" + str(h), "message": str(e)})
-                    # skip bad block instead of breaking the whole collection
-    except Exception as e:
-        errors.append({"source": "recent_blocks", "message": str(e)})
+    if collect_optional_rpc:
+        try:
+            height = blockchain.get("blocks")
+            if height is not None:
+                for i in range(8):
+                    h = height - i
+                    if h < 0:
+                        break
+                    try:
+                        block_hash = bitcoin_rpc("getblockhash", [h])
+                        header = bitcoin_rpc("getblockheader", [block_hash])
+                        stats = bitcoin_rpc("getblockstats", [h])
+                        recent_blocks.append({
+                            "height": header.get("height"),
+                            "time": header.get("time"),
+                            "tx_count": stats.get("txs", header.get("nTx")),
+                            "size": stats.get("total_size"),
+                            "hash": header.get("hash"),
+                        })
+                    except Exception as e:
+                        errors.append({"source": "recent_block_" + str(h), "message": str(e)})
+                        # skip bad block instead of breaking the whole collection
+        except Exception as e:
+            errors.append({"source": "recent_blocks", "message": str(e)})
 
     try:
         network = bitcoin_rpc("getnetworkinfo")
@@ -220,24 +239,26 @@ def collect_status():
         network = {}
         errors.append({"source": "getnetworkinfo", "message": str(e)})
 
-    try:
-        mempool = bitcoin_rpc("getmempoolinfo")
-    except Exception as e:
-        mempool = {}
-        errors.append({"source": "getmempoolinfo", "message": str(e)})
+    mempool = {}
+    if collect_optional_rpc:
+        try:
+            mempool = bitcoin_rpc("getmempoolinfo")
+        except Exception as e:
+            errors.append({"source": "getmempoolinfo", "message": str(e)})
 
     # Fee estimates (targets 1 = next block, 3 ≈30min, 6 ≈1h)
     fee_estimates = {}
-    for target_blocks, label in [(1, "next_block"), (3, "30min"), (6, "1h")]:
-        try:
-            est = bitcoin_rpc("estimatesmartfee", [target_blocks])
-            fee_estimates[label] = {
-                "feerate": est.get("feerate"),
-                "blocks": est.get("blocks"),
-            }
-        except Exception as e:
-            errors.append({"source": f"estimatesmartfee {target_blocks}", "message": str(e)})
-            fee_estimates[label] = None
+    if collect_optional_rpc:
+        for target_blocks, label in [(1, "next_block"), (3, "30min"), (6, "1h")]:
+            try:
+                est = bitcoin_rpc("estimatesmartfee", [target_blocks])
+                fee_estimates[label] = {
+                    "feerate": est.get("feerate"),
+                    "blocks": est.get("blocks"),
+                }
+            except Exception as e:
+                errors.append({"source": f"estimatesmartfee {target_blocks}", "message": str(e)})
+                fee_estimates[label] = None
 
     try:
         uptime = bitcoin_rpc("uptime")
@@ -245,10 +266,12 @@ def collect_status():
         uptime = None
         errors.append({"source": "uptime", "message": str(e)})
 
-    try:
-        peerinfo = bitcoin_rpc("getpeerinfo")
-    except Exception:
-        peerinfo = []
+    peerinfo = []
+    if collect_optional_rpc:
+        try:
+            peerinfo = bitcoin_rpc("getpeerinfo")
+        except Exception:
+            pass
 
     electrs = get_electrs_status()
     if electrs and electrs.get("running") and electrs.get("height") is not None:
@@ -356,6 +379,7 @@ def collect_status():
         "network": {
             "version": network.get("version"),
             "subversion": network.get("subversion"),
+            "version_label": knots_version_label(network.get("subversion")),
             "protocolversion": network.get("protocolversion"),
             "localaddresses": network.get("localaddresses", []),
             "reachable": network_reachability,

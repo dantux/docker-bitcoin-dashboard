@@ -24,6 +24,16 @@ class ConfigurationTests(unittest.TestCase):
         with patch.dict(os.environ, {"NODE_NAME": "legacy-name"}, clear=True):
             self.assertEqual(app.dashboard_instance_name(), "legacy-name")
 
+    def test_knots_version_label_from_subversion(self):
+        self.assertEqual(
+            app.knots_version_label("/Satoshi:29.3.0/Knots:20260210/"),
+            "29.3.0 (Knots 20260210)",
+        )
+
+    def test_knots_version_label_is_empty_when_missing(self):
+        self.assertEqual(app.knots_version_label(None), "")
+        self.assertEqual(app.knots_version_label(""), "")
+
     def test_pruning_fields_are_exposed(self):
         sync = app.blockchain_sync_status(
             {
@@ -94,6 +104,61 @@ class ConfigurationTests(unittest.TestCase):
                 )
         self.assertEqual(password, "correct horse battery staple")
 
+    def test_collect_status_skips_optional_rpc_work_during_initial_block_download(self):
+        calls = []
+
+        def fake_bitcoin_rpc(method, params=None):
+            calls.append(method)
+            responses = {
+                "getblockchaininfo": {
+                    "chain": "main",
+                    "blocks": 0,
+                    "headers": 1,
+                    "initialblockdownload": True,
+                },
+                "getnetworkinfo": {"connections": 0, "networks": []},
+                "uptime": 1,
+            }
+            if method not in responses:
+                raise AssertionError(f"unexpected RPC method: {method}")
+            return responses[method]
+
+        with patch.dict(os.environ, {}, clear=True), patch.object(
+            app, "bitcoin_rpc", side_effect=fake_bitcoin_rpc
+        ):
+            status = app.collect_status()
+
+        self.assertEqual(calls, ["getblockchaininfo", "getnetworkinfo", "uptime"])
+        self.assertEqual(status["recent_blocks"], [])
+        self.assertEqual(status["peers"], [])
+        self.assertEqual(status["mempool"]["fee_estimates"], {})
+
+    def test_collect_status_skips_optional_rpc_work_when_ibd_state_is_unknown(self):
+        calls = []
+
+        def fake_bitcoin_rpc(method, params=None):
+            calls.append(method)
+            if method == "getblockchaininfo":
+                raise TimeoutError("timed out")
+            responses = {
+                "getnetworkinfo": {"connections": 0, "networks": []},
+                "uptime": 1,
+            }
+            if method not in responses:
+                raise AssertionError(f"unexpected RPC method: {method}")
+            return responses[method]
+
+        with patch.dict(os.environ, {}, clear=True), patch.object(
+            app, "bitcoin_rpc", side_effect=fake_bitcoin_rpc
+        ):
+            status = app.collect_status()
+
+        self.assertEqual(calls, ["getblockchaininfo", "getnetworkinfo", "uptime"])
+        self.assertEqual(status["recent_blocks"], [])
+        self.assertEqual(status["peers"], [])
+        self.assertEqual(status["mempool"]["fee_estimates"], {})
+        self.assertEqual(status["errors"][0]["source"], "getblockchaininfo")
+
 
 class PageStructureTests(unittest.TestCase):
     def test_latest_blocks_appears_before_services(self):
@@ -101,11 +166,26 @@ class PageStructureTests(unittest.TestCase):
 
         self.assertLess(html.index("<h2>Latest Blocks</h2>"), html.index("<h2>Services</h2>"))
 
+    def test_header_includes_knots_version(self):
+        html = Path(app.APP_DIR / "index.html").read_text(encoding="utf-8")
+
+        self.assertIn('id="knots-version"', html)
+
     def test_desktop_metric_grid_uses_seven_columns(self):
         css = Path(app.APP_DIR / "styles.css").read_text(encoding="utf-8")
         desktop_css = css.split("@media", 1)[0]
 
         self.assertIn("grid-template-columns: repeat(7, minmax(0, 1fr));", desktop_css)
+
+    def test_desktop_metric_grid_uses_eight_columns_when_tor_is_visible(self):
+        css = Path(app.APP_DIR / "styles.css").read_text(encoding="utf-8")
+        desktop_css = css.split("@media", 1)[0]
+
+        self.assertIn(
+            '.metric-grid:has(> .metric[data-feature="tor"]:not(.hidden))',
+            desktop_css,
+        )
+        self.assertIn("repeat(8, minmax(0, 1fr))", desktop_css)
 
     def test_one_hour_fee_card_is_not_rendered(self):
         html = Path(app.APP_DIR / "index.html").read_text(encoding="utf-8")
