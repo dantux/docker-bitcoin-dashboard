@@ -192,6 +192,55 @@ class PageStructureTests(unittest.TestCase):
 
         self.assertNotIn('id="fee-1h"', html)
 
+    def test_page_footer_shows_dashboard_version(self):
+        html = Path(app.APP_DIR / "index.html").read_text(encoding="utf-8")
+
+        self.assertGreater(html.index("<footer"), html.index("<h2>Peers</h2>"))
+        self.assertIn('id="dashboard-version"', html)
+        self.assertRegex(html, r"<footer[^>]*>[\s\S]*dashboard-version")
+
+    def test_mobile_metric_grid_overrides_tor_eight_columns(self):
+        css = Path(app.APP_DIR / "styles.css").read_text(encoding="utf-8")
+        mobile_css = css.split("@media", 1)[1]
+
+        self.assertIn(
+            '.metric-grid:has(> .metric[data-feature="tor"]:not(.hidden))',
+            mobile_css,
+        )
+        self.assertIn("repeat(3, minmax(0, 1fr))", mobile_css)
+        self.assertIn("repeat(2, minmax(0, 1fr))", mobile_css)
+
+
+class DashboardVersionTests(unittest.TestCase):
+    def test_dashboard_version_prefers_app_version_env(self):
+        with patch.dict(os.environ, {"APP_VERSION": "9.9.9"}, clear=True):
+            self.assertEqual(app.dashboard_version(), "9.9.9")
+
+    def test_dashboard_version_reads_version_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "VERSION"
+            path.write_text("1.2.3\n", encoding="utf-8")
+            with patch.dict(os.environ, {}, clear=True), patch.object(
+                app, "APP_DIR", Path(directory)
+            ):
+                self.assertEqual(app.dashboard_version(), "1.2.3")
+
+    def test_collect_status_includes_dashboard_version(self):
+        def fake_bitcoin_rpc(method, params=None):
+            responses = {
+                "getblockchaininfo": {"initialblockdownload": True},
+                "getnetworkinfo": {"connections": 0, "networks": []},
+                "uptime": 1,
+            }
+            return responses[method]
+
+        with patch.dict(os.environ, {"APP_VERSION": "0.2.3"}, clear=True), patch.object(
+            app, "bitcoin_rpc", side_effect=fake_bitcoin_rpc
+        ):
+            status = app.collect_status()
+
+        self.assertEqual(status["dashboard"]["version"], "0.2.3")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -78,6 +78,17 @@ def knots_version_label(subversion):
     return text.strip("/")
 
 
+def dashboard_version():
+    value = os.environ.get("APP_VERSION", "").strip()
+    if value:
+        return value
+    path = APP_DIR / "VERSION"
+    try:
+        return path.read_text(encoding="utf-8").strip() or "dev"
+    except OSError:
+        return "dev"
+
+
 def blockchain_sync_status(blockchain):
     verification_progress = blockchain.get("verificationprogress")
     progress_percent = (
@@ -365,6 +376,7 @@ def collect_status():
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "duration_ms": round((time.time() - started) * 1000),
+        "dashboard": {"version": dashboard_version()},
         "node": {"name": dashboard_instance_name()},
         "features": features,
         "chain": blockchain.get("chain"),
@@ -406,6 +418,7 @@ def empty_status():
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "duration_ms": 0,
+        "dashboard": {"version": dashboard_version()},
         "node": {"name": dashboard_instance_name()},
         "features": feature_config(),
         "chain": None,

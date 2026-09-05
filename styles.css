@@ -243,6 +243,15 @@ button:hover {
   display: none;
 }
 
+.page-footer {
+  margin: 18px 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -471,7 +480,8 @@ th {
     grid-template-columns: 1fr;
   }
 
-  .metric-grid {
+  .metric-grid,
+  .metric-grid:has(> .metric[data-feature="tor"]:not(.hidden)) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -498,7 +508,8 @@ th {
     height: 48px;
   }
 
-  .metric-grid {
+  .metric-grid,
+  .metric-grid:has(> .metric[data-feature="tor"]:not(.hidden)) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

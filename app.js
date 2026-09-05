@@ -215,6 +215,10 @@ function render(data) {
   const progressClamped = Math.max(0, Math.min(100, progress));
 
   applyFeatures(data);
+  const dashboardVersion = (data.dashboard && data.dashboard.version) || "";
+  if ($("dashboard-version")) {
+    $("dashboard-version").textContent = dashboardVersion || "--";
+  }
   const instanceName = (data.node && data.node.name) || "bitcoin-knots";
   $("node-name").textContent = instanceName;
   document.title = `${instanceName} · Bitcoin Knots Status`;

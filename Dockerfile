@@ -15,12 +15,13 @@ LABEL org.opencontainers.image.title="Docker Bitcoin Dashboard" \
       org.opencontainers.image.licenses="MIT"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    APP_VERSION=${APP_VERSION}
 
 RUN useradd --system --uid 10001 --home-dir /app dashboard
 
 WORKDIR /app
-COPY --chown=dashboard:dashboard app.py app.js index.html styles.css icon.svg ./
+COPY --chown=dashboard:dashboard app.py app.js index.html styles.css icon.svg VERSION ./
 
 USER dashboard
 EXPOSE 8335
